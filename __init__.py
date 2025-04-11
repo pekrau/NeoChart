@@ -1,0 +1,1 @@
+"NeoChart: SVG chart creation."
