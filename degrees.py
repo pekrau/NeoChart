@@ -1,8 +1,9 @@
 "Angle specified in degrees. Immutable."
 
 import math
+import functools
 
-
+@functools.total_ordering
 class Degrees:
     "Handle angle specified in degrees, yields value in radians."
 
@@ -12,34 +13,40 @@ class Degrees:
         return Degrees(180.0 * radians / math.pi)
 
     def __init__(self, degrees):
-        assert isinstance(degrees, (float, int))
         self._degrees = degrees
 
     def __add__(self, other):
-        assert isinstance(other, (float, int, Degrees))
         if isinstance(other, Degrees):
             return Degrees(self.degrees + other.degrees)
         else:
             return Degrees(self.degrees + other)
 
     def __sub__(self, other):
-        assert isinstance(other, (float, int, Degrees))
         if isinstance(other, Degrees):
             return Degrees(self.degrees - other.degrees)
         else:
             return Degrees(self.degrees - other)
 
     def __mul__(self, other):
-        assert isinstance(other, (float, int))
         return Degrees(other * self.degrees)
 
     def __rmul__(self, other):
-        assert isinstance(other, (float, int))
         return Degrees(other * self.degrees)
 
     def __truediv__(self, other):
-        assert isinstance(other, (float, int))
         return Degrees(self.degrees / other)
+
+    def __lt__(self, other):
+        if isinstance(other, Degrees):
+            return self._degrees < other._degrees
+        else:
+            return self._degrees < other
+
+    def __eq__(self, other):
+        if isinstance(other, Degrees):
+            return self._degrees == other._degrees
+        else:
+            return self._degrees == other
 
     def __neg__(self):
         return Degrees(- self.degrees)

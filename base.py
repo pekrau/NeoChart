@@ -1,9 +1,10 @@
 "NeoChart. Base classes."
 
-from minixml import Element
-from vector2 import Vector2
+import constants
 from color import Color, Palette
 from degrees import Degrees
+from minixml import Element
+from vector2 import Vector2
 
 
 PRECISION = 0.0005
@@ -72,6 +73,7 @@ class Item:
         origin = Vector2(0, 0) - extent / 2
         result = Element(
             "svg",
+            xmlns=constants.SVG_XMLNS,
             width=N(extent.x),
             height=N(extent.y),
             viewBox=f"{N(origin.x)} {N(origin.y)} {N(extent.x)} {N(extent.y)}")

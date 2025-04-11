@@ -55,11 +55,11 @@ class PieChart(Item):
                 else:
                     start = stop
                     stop = start + fraction * Degrees(360)
-                print(start, stop)
                 path = Path(Vector2(0, 0))
                 p0 = Vector2.from_polar(self.radius, float(start))
                 p1 = Vector2.from_polar(self.radius, float(stop))
-                path.L(p0).A(self.radius, self.radius, 0, 0, 1, p1).Z()
+                lof = 1 if stop - start > Degrees(180) else 0
+                path.L(p0).A(self.radius, self.radius, 0, lof, 1, p1).Z()
                 wedge = Element("path", d=str(path))
                 wedge["style"] = f"fill: {next(palette)};"
                 result += wedge
@@ -79,14 +79,13 @@ class Slice(Item):
         super().__init__(style=style)
         self.title = title
         self.value = value
-        self.start = None
+        self.start = start
 
 
 if __name__ == "__main__":
     pyramid = PieChart("Pyramid")
-    pyramid += Slice("Sky", 45)
-    pyramid += ("Sunny side", 30)
-    pyramid += Slice("Shady side", 5)
-    pyramid += Slice("The rest", 20)
+    pyramid += Slice("Shady side", 10, start=Degrees(42))
+    pyramid += ("Sunny side", 15)
+    pyramid += Slice("Sky", 70)
     with open("pyramid.svg", "w") as outfile:
         outfile.write(repr(pyramid.svg_root()))
