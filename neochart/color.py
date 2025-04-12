@@ -6,6 +6,7 @@ import webcolors
 
 
 class Color:
+    "Color defined by hex, name or rgb triple."
 
     def __init__(self, *values):
         if len(values) == 1 and isinstance(values[0], str):
@@ -23,7 +24,7 @@ class Color:
     def __str__(self):
         "Return the named color, if any, or the hex code."
         try:
-            return webcolors.hex_to_name(self.hex)
+            return self.name
         except ValueError:
             return self.hex
 
@@ -35,8 +36,14 @@ class Color:
     def rgb(self):
         return tuple(webcolors.hex_to_rgb(self.hex))
 
+    @property
+    def name(self):
+        "Return the name for the color. Raise ValueError if none."
+        return webcolors.hex_to_name(self.hex)
+
 
 class Palette:
+    "Ordered set of colors."
 
     def __init__(self, *colors):
         self.colors = []
@@ -57,8 +64,22 @@ class Palette:
         "Return an eternally cycling iterator over the current colors."
         return itertools.cycle(self.colors[:])
 
+    def data(self):
+        "Return this item as a dictionary."
+        return {"palette": [str(c) for c in self.colors]}
+
+    @classmethod
+    def parse(cls, data):
+        "Parse the data content into a Palette instance."
+        return Palette(*[Color(h) for h in data["palette"]])
+
 
 if __name__ == "__main__":
-    for s in ["red", "#a39", "goldenrod", "slategray"]:
-        c = Color(s)
+    palette = Palette(Color("red"),
+                      Color("#a39"),
+                      Color("goldenrod"),
+                      Color("slategray"))
+    palette_cycle = palette.cycle()
+    for i in range(8):
+        c = next(palette_cycle)
         print(c, c.hex, c.rgb)

@@ -6,25 +6,6 @@ import xml.sax
 import xml.sax.saxutils
 
 
-def parse(filename_or_stream, content_handler=None):
-    """Parse the file given by its path, or an open file object.
-    Returns the root XML element.
-    """
-    if content_handler is None:
-        content_handler = DefaultContentHandler()
-    assert isinstance(content_handler, xml.sax.ContentHandler)
-    try:
-        xml.sax.parse(filename_or_stream, content_handler)
-    except xml.sax.SAXException as error:
-        raise ValueError(f"XML parse error: {error}")
-    return content_handler.root
-
-
-def parse_content(content, content_handler=None):
-    "Parse the given XML content. Return the root XML element."
-    return parse(io.StringIO(content), content_handler=content_handler)
-
-
 class Element:
     "XML element. Contains a reference to superelement and subelements (if any)."
 
@@ -54,7 +35,7 @@ class Element:
     def __repr__(self):
         "Return the string representation of the element and its subelements."
         outfile = io.StringIO()
-        self.serialize(
+        self.write(
             outfile, indent=self.repr_indent, xml_decl=self.xml_decl and self.depth == 0
         )
         return outfile.getvalue()
@@ -107,7 +88,6 @@ class Element:
         return True
 
     def __iadd__(self, other):
-        assert isinstance(other, Element)
         self.append(other)
         return self
 
@@ -153,7 +133,6 @@ class Element:
 
     def insert(self, i, elem):
         "Insert the element at position i in the list of subelements of this element."
-        assert isinstance(elem, (str, Element))
         if isinstance(elem, Element) and elem.superelement:
             raise ValueError("given element has not been freed from its superelement")
         self.subelements.insert(i, elem)
@@ -162,7 +141,6 @@ class Element:
 
     def append(self, elem):
         "Append the element last in the subelements of this element."
-        assert isinstance(elem, (str, Element))
         if isinstance(elem, Element) and elem.superelement:
             raise ValueError("given element has not been freed from its superelement")
         self.subelements.append(elem)
@@ -202,8 +180,8 @@ class Element:
                 continue
             yield from subelement.walk(test=test)
 
-    def serialize(self, outfile, indent=None, xml_decl=False):
-        "Serialize the XML element and its subelements into the open file object."
+    def write(self, outfile, indent=None, xml_decl=False):
+        "Write the XML of the element and its subelements into the open file object."
         if xml_decl:
             outfile.write(f'<?xml version="1.0"?>\n')
         if indent is None:
@@ -221,7 +199,7 @@ class Element:
                 if isinstance(elem, Element):
                     if indent:
                         outfile.write("\n")
-                    elem.serialize(outfile, indent=indent)
+                    elem.write(outfile, indent=indent)
                     newline = True
                 elif isinstance(elem, str):
                     outfile.write(xml.sax.saxutils.escape(elem))
@@ -254,12 +232,28 @@ class DefaultContentHandler(xml.sax.ContentHandler):
             self.root = elem
         self.stack.append(elem)
 
-    def endElement(self, tag):
+    def endElement(self, tag: str):
         self.stack.pop()
 
-    def characters(self, content):
+    def characters(self, content: str):
         if content.strip():
             self.stack[-1].subelements.append(xml.sax.saxutils.unescape(content))
+
+
+def read(filepath_or_stream, content_handler=DefaultContentHandler()):
+    """Read and parse the file given by its path, or an open file object.
+    Returns the root XML element.
+    """
+    try:
+        xml.sax.parse(filepath_or_stream, content_handler)
+    except xml.sax.SAXException as error:
+        raise ValueError(f"XML parse error: {error}")
+    return content_handler.root
+
+
+def parse(content, content_handler=None):
+    "Parse the given XML content. Return the root XML element."
+    return read(io.StringIO(content), content_handler=content_handler)
 
 
 if __name__ == "__main__":

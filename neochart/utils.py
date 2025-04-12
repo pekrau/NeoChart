@@ -1,13 +1,8 @@
-"NeoChart. Base classes."
-
-import constants
-from color import Color, Palette
-from degrees import Degrees
-from minixml import Element
-from vector2 import Vector2
+"Utility functions and classes."
 
 
 PRECISION = 0.0005
+
 
 def N(x):
     "Return a compact representation of the numerical value."
@@ -15,74 +10,6 @@ def N(x):
         return f"{round(x):d}"
     else:
         return f"{x:.3f}"
-
-class Style:
-    "Container of style specifications."
-
-    def __init__(self, **style):
-        self.style = {}
-        for key, value in style.items():
-            self[key] = value
-
-    def __getitem__(self, key):
-        return self.style[key]
-
-    def __setitem__(self, key, value):
-        self.style[key.replace("_", "-")] = value
-
-    def __str__(self):
-        "Return the values as a string appropriate for the 'style' attribute."
-        parts = []
-        for key, value in self.style.items():
-            if isinstance(value, float):
-                parts.append(f"{key}: {N(value)};")
-            else:
-                parts.append(f"{key}: {value};")
-        return " ".join(parts)
-
-    def copy(self):
-        return Style(**self.style)
-
-
-class Item:
-    "Abstract graphical item."
-
-    DEFAULT_STYLE = Style()
-    DEFAULT_PALETTE = Palette(Color("#4c78a8"),
-                              Color("#9ecae9"),
-                              Color("#f58518"),
-                              Color("#ffbf79"))
-
-    def __init__(self, style=None, palette=None):
-        self.style = self.DEFAULT_STYLE.copy()
-        if style is not None:
-            self.style.update(style)
-        if palette is  None:
-            self.palette = self.DEFAULT_PALETTE.copy()
-        else:
-            self.palette = palette
-
-    @property
-    def extent(self):
-        "Extent of this graphical item."
-        return Vector2(0, 0)
-
-    def svg_root(self):
-        "Return the SVG root item with content in minixml representation."
-        extent = self.extent
-        origin = Vector2(0, 0) - extent / 2
-        result = Element(
-            "svg",
-            xmlns=constants.SVG_XMLNS,
-            width=N(extent.x),
-            height=N(extent.y),
-            viewBox=f"{N(origin.x)} {N(origin.y)} {N(extent.x)} {N(extent.y)}")
-        result.append(self.svg())
-        return result
-
-    def svg(self):
-        "Return the SVG content element in minixml representation."
-        raise NotImplementedError
 
 
 class Path:
@@ -178,12 +105,16 @@ class Path:
 
     def A(self, xr, yr, xrot, laf, sf, v):
         "Elliptical arc. Absolute coordinates."
-        self.parts.append(f"A {N(xr)} {N(yr)} {N(xrot)} {N(laf)} {N(sf)} {N(v.x)} {N(v.y)}")
+        self.parts.append(
+            f"A {N(xr)} {N(yr)} {N(xrot)} {N(laf)} {N(sf)} {N(v.x)} {N(v.y)}"
+        )
         return self
 
     def a(self, rx, ry, xrot, laf, sf, v):
         "Elliptical arc. Relative coordinates."
-        self.parts.append(f"a {N(xr)} {N(yr)} {N(xrot)} {N(laf)} {N(sf)} {N(v.x)} {N(v.y)}")
+        self.parts.append(
+            f"a {N(xr)} {N(yr)} {N(xrot)} {N(laf)} {N(sf)} {N(v.x)} {N(v.y)}"
+        )
         return self
 
     def Z(self):
@@ -199,5 +130,15 @@ class Path:
 
 
 if __name__ == "__main__":
-    for x in [0.0, 0.001, -0.001, 0.0007, -0.0007, 1000.001, 1000.0007, -1000.001, -1000.0007]:
+    for x in [
+        0.0,
+        0.001,
+        -0.001,
+        0.0007,
+        -0.0007,
+        1000.001,
+        1000.0007,
+        -1000.001,
+        -1000.0007,
+    ]:
         print(x, N(x))

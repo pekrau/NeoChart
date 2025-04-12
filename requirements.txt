@@ -1,1 +1,7 @@
+asttokens==3.0.0
+colorama==0.4.6
+executing==2.2.0
+icecream==2.1.4
+Pygments==2.19.1
+PyYAML==6.0.2
 webcolors==24.11.1
