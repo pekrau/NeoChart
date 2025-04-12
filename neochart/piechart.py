@@ -77,7 +77,11 @@ class Piechart(Item):
                 lof = 1 if stop - start > Degrees(180) else 0
                 path.L(p0).A(self.radius, self.radius, 0, lof, 1, p1).Z()
                 elem = Element("path", d=str(path))
-                elem["style"] = f"fill: {next(palette)};"
+                try:
+                    color = slice.style["fill"]
+                except KeyError:
+                    color = next(palette)
+                elem["style"] = f"fill: {color};"
                 result += elem
         return result
 
@@ -110,8 +114,8 @@ class Piechart(Item):
 class Slice(Item):
     "Slice in a pie chart."
 
-    DEFAULT_STYLE = {}
-    DEFAULT_PALETTE = {}
+    DEFAULT_STYLE = Style()
+    DEFAULT_PALETTE = None
                         
     def __init__(self, title, value, style=None):
         super().__init__(style=style)
@@ -148,6 +152,9 @@ if __name__ == "__main__":
     contents1 = pyramid.data()
     buffer = io.StringIO()
     pyramid.write(buffer)
+    buffer.seek(0)
+    with open("pyramid.yaml", "w") as outfile:
+        outfile.write(buffer.read())
     buffer.seek(0)
     pyramid = read(buffer)
     contents2 = pyramid.data()

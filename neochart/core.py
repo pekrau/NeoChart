@@ -42,9 +42,9 @@ def parse(key, data):
 class Style:
     "Container of style specifications."
 
-    def __init__(self, **style):
+    def __init__(self, **styles):
         self.style = {}
-        for key, value in style.items():
+        for key, value in styles.items():
             self[key] = value
 
     def __getitem__(self, key):
@@ -105,7 +105,10 @@ class Item:
         if style is not None:
             self.style.update(style)
         if palette is None:
-            self.palette = self.DEFAULT_PALETTE.copy()
+            if self.DEFAULT_PALETTE is not None:
+                self.palette = self.DEFAULT_PALETTE.copy()
+            else:
+                self.palette = None
         else:
             self.palette = palette
 
