@@ -14,7 +14,25 @@ from utils import N
 from icecream import ic
 
 
-parse_lookup = {}
+_parse_lookup = {}
+
+
+def add_parse_lookup(cls):
+    "Add the chart class to the parse lookup table."
+    _parse_lookup[cls.__name__.casefold()] = cls.parse
+
+
+def get_parse_function(name):
+    "Get the parse function for the chart name."
+    try:
+        return _parse_lookup[name]
+    except KeyError:
+        raise ValueError(f"no parse function for item in YAML data: '{key}'")
+
+
+def write(item, outfile):
+    "Write the YAML of the item into the open file object."
+    yaml.safe_dump(item.data(), outfile)
 
 
 def read(filepath_or_stream):
@@ -27,16 +45,12 @@ def read(filepath_or_stream):
     else:
         data = yaml.safe_load(filepath_or_stream)
     if len(data) != 1:
-        raise ValueError("YAML data must contain exactly one item.")
+        raise ValueError("YAML file must contain exactly one top-level item.")
     return parse(*data.popitem())
 
 
 def parse(key, data):
-    try:
-        parse = parse_lookup[key]
-    except KeyError:
-        raise ValueError(f"cannot parse unknown item in YAML data: '{key}'")
-    return parse(data)
+    return _parse_lookup[key](data)
 
 
 class Style:
@@ -62,6 +76,16 @@ class Style:
             else:
                 parts.append(f"{key}: {value};")
         return " ".join(parts)
+
+    def attrs(self):
+        "Return the style as a dictionary suitable for inline attributes."
+        result = {}
+        for key, value in self.style.items():
+            if isinstance(value, float):
+                result[key] = N(value)
+            else:
+                result[key] = value
+        return result
 
     def update(self, other):
         if isinstance(other, dict):
@@ -90,8 +114,7 @@ class Style:
         return Style(**data)
 
 
-# Add the parse function for Style.
-parse_lookup["style"] = Style.parse
+add_parse_lookup(Style)
 
 
 class Item:
@@ -148,10 +171,6 @@ class Item:
     def data_content(self):
         "Return the data content of this item as a dictionary."
         return {}
-
-    def write(self, outfile):
-        "Write the YAML of this item into the open file object."
-        yaml.safe_dump(self.data(), outfile)
 
     @classmethod
     def parse(cls, data):

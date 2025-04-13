@@ -75,10 +75,9 @@ class Palette:
 
 
 if __name__ == "__main__":
-    palette = Palette(Color("red"),
-                      Color("#a39"),
-                      Color("goldenrod"),
-                      Color("slategray"))
+    palette = Palette(
+        Color("red"), Color("#a39"), Color("goldenrod"), Color("slategray")
+    )
     palette_cycle = palette.cycle()
     for i in range(8):
         c = next(palette_cycle)

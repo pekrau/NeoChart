@@ -1,6 +1,5 @@
 "Utility functions and classes."
 
-
 PRECISION = 0.0005
 
 

@@ -16,7 +16,14 @@ class Piechart(Item):
     )
 
     def __init__(
-            self, title=None, radius=None, start=None, total=None, style=None, palette=None, slices=None
+        self,
+        title=None,
+        radius=None,
+        start=None,
+        total=None,
+        style=None,
+        palette=None,
+        slices=None,
     ):
         super().__init__(style=style, palette=palette)
         self.title = title
@@ -58,7 +65,8 @@ class Piechart(Item):
 
     def svg_content(self):
         "Return the SVG content element in minixml representation."
-        result = Element("g", style=self.style)
+        result = Element("g", **self.style.attrs())
+        result["class"] = "piechart"
         circle = Element("circle", r=N(self.radius))
         result += circle
         if self.slices:
@@ -81,25 +89,29 @@ class Piechart(Item):
                     color = slice.style["fill"]
                 except KeyError:
                     color = next(palette)
-                elem["style"] = f"fill: {color};"
+                elem["fill"] = str(color)
                 result += elem
         return result
 
     def data_content(self):
         "Return the data content of this item as a dictionary."
-        return dict(title=self.title,
-                    radius=self.radius,
-                    start=None if self.start is None else self.start.degrees,
-                    slices=[s.data() for s in self.slices])
+        return dict(
+            title=self.title,
+            radius=self.radius,
+            start=None if self.start is None else self.start.degrees,
+            slices=[s.data() for s in self.slices],
+        )
 
     @classmethod
     def parse(cls, data):
         "Parse the data content into a Piechart instance."
-        kwargs = dict(title=data.get("title"),
-                      radius=data.get("radius"),
-                      start=data.get("start"),
-                      total=data.get("total"),
-                      slices=[Slice.parse(d) for d in data.get("slices") or []])
+        kwargs = dict(
+            title=data.get("title"),
+            radius=data.get("radius"),
+            start=data.get("start"),
+            total=data.get("total"),
+            slices=[Slice.parse(d) for d in data.get("slices") or []],
+        )
         try:
             kwargs["style"] = Style.parse(data["style"])
         except KeyError:
@@ -116,7 +128,7 @@ class Slice(Item):
 
     DEFAULT_STYLE = Style()
     DEFAULT_PALETTE = None
-                        
+
     def __init__(self, title, value, style=None):
         super().__init__(style=style)
         self.title = title
@@ -128,8 +140,7 @@ class Slice(Item):
     @classmethod
     def parse(cls, data):
         slice = data["slice"]
-        kwargs = dict(title=slice["title"],
-                      value=slice["value"])
+        kwargs = dict(title=slice["title"], value=slice["value"])
         try:
             kwargs["style"] = Style.parse(slice["style"])
         except KeyError:
@@ -137,12 +148,12 @@ class Slice(Item):
         return Slice(**kwargs)
 
 
-# Add the parse function for Piechart.
-parse_lookup["piechart"] = Piechart.parse
+add_parse_lookup(Piechart)
 
 
 if __name__ == "__main__":
     import io
+
     pyramid = Piechart("Pyramid", start=Degrees(132))
     pyramid += Slice("Shady side", 10)
     pyramid += ("Sunny side", 15)
@@ -151,7 +162,7 @@ if __name__ == "__main__":
         outfile.write(repr(pyramid.svg()))
     contents1 = pyramid.data()
     buffer = io.StringIO()
-    pyramid.write(buffer)
+    write(pyramid, buffer)
     buffer.seek(0)
     with open("pyramid.yaml", "w") as outfile:
         outfile.write(buffer.read())

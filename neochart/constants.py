@@ -1,7 +1,7 @@
 "Constants."
 
 SOFTWARE = "NeoChart"
-VERSION = (0, 1, 3)
+VERSION = (0, 1, 4)
 __version__ = ".".join([str(n) for n in VERSION])
 
 SVG_XMLNS = "http://www.w3.org/2000/svg"
