@@ -60,9 +60,6 @@ class Degrees:
         return self.degrees * math.pi / 180.0
 
     def __repr__(self) -> str:
-        return f"Degrees({self.degrees})"
-
-    def __str__(self) -> str:
         return f"Degrees({self.degrees:g})"
 
     @property

@@ -5,28 +5,33 @@ import itertools
 import webcolors
 
 
-class Color:
-    "Color defined by hex, name or rgb triple."
-
-    def __init__(self, *values):
-        if len(values) == 1 and isinstance(values[0], str):
-            if values[0].startswith("#"):
-                self._hex = webcolors.normalize_hex(values[0])
-            else:
-                self._hex = webcolors.name_to_hex(values[0])
-        elif len(values) == 1 and isinstance(values[0], Color):
-            self._hex = values[0].hex
-        elif len(values) == 3 and all([isinstance(v, int) for v in values]):
-            self._hex = webcolors.rgb_to_hex(values)
+def to_hex(value):
+    "Convert value to a hex specification."
+    if isinstance(value, str):
+        if value.startswith("#"):
+            return webcolors.normalize_hex(value)
         else:
-            raise ValueError("invalid color specification")
+            return webcolors.name_to_hex(value)
+    elif isinstance(value, Color):
+        return value.hex
+    elif isinstance(value, (tuple, list)) and len(value) == 3:
+        return webcolors.rgb_to_hex(value)
+    else:
+        raise ValueError("invalid color specification")
+
+
+class Color:
+    "Color defined by hex, name or rgb triple. Immutable."
+
+    def __init__(self, value):
+        self._hex = to_hex(value)
 
     def __str__(self):
         "Return the named color, if any, or the hex code."
         try:
             return self.name
         except ValueError:
-            return self.hex
+            return self._hex
 
     @property
     def hex(self):
@@ -34,12 +39,12 @@ class Color:
 
     @property
     def rgb(self):
-        return tuple(webcolors.hex_to_rgb(self.hex))
+        return tuple(webcolors.hex_to_rgb(self._hex))
 
     @property
     def name(self):
         "Return the name for the color. Raise ValueError if none."
-        return webcolors.hex_to_name(self.hex)
+        return webcolors.hex_to_name(self._hex)
 
 
 class Palette:
@@ -48,7 +53,7 @@ class Palette:
     def __init__(self, *colors):
         self.colors = []
         for color in colors:
-            self.add(color)
+            self.add(Color(to_hex(color)))
 
     def __iadd__(self, other):
         self.add(other)
@@ -64,19 +69,19 @@ class Palette:
         "Return an eternally cycling iterator over the current colors."
         return itertools.cycle(self.colors[:])
 
-    def data(self):
-        "Return this item as a dictionary."
+    def asdict(self):
+        "Return as a dictionary."
         return {"palette": [str(c) for c in self.colors]}
 
     @classmethod
     def parse(cls, data):
-        "Parse the data content into a Palette instance."
-        return Palette(*[Color(h) for h in data["palette"]])
+        "Parse the data into a Palette instance."
+        return Palette(*[Color(h) for h in data])
 
 
 if __name__ == "__main__":
     palette = Palette(
-        Color("red"), Color("#a39"), Color("goldenrod"), Color("slategray")
+        "red", "#a39", "goldenrod", "slategray", (128, 0, 0),
     )
     palette_cycle = palette.cycle()
     for i in range(8):

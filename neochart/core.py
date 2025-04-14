@@ -1,5 +1,7 @@
 "NeoChart. Core classes."
 
+from icecream import ic
+
 from pathlib import Path
 
 import yaml
@@ -11,28 +13,28 @@ from minixml import Element
 from vector2 import Vector2
 from utils import N
 
-from icecream import ic
+
+_chart_lookup = {}
 
 
-_parse_lookup = {}
-
-
-def add_parse_lookup(cls):
+def add_chart(cls):
     "Add the chart class to the parse lookup table."
-    _parse_lookup[cls.__name__.casefold()] = cls.parse
+    if not issubclass(cls, Chart):
+        raise ValueError
+    _chart_lookup[cls.__name__.casefold()] = cls.parse
 
 
 def get_parse_function(name):
     "Get the parse function for the chart name."
     try:
-        return _parse_lookup[name]
+        return _chart_lookup[name]
     except KeyError:
-        raise ValueError(f"no parse function for item in YAML data: '{key}'")
+        raise ValueError(f"no parse function for item '{key}' in YAML data")
 
 
 def write(item, outfile):
     "Write the YAML of the item into the open file object."
-    yaml.safe_dump(item.data(), outfile)
+    yaml.safe_dump(item.asdict(), outfile)
 
 
 def read(filepath_or_stream):
@@ -50,7 +52,7 @@ def read(filepath_or_stream):
 
 
 def parse(key, data):
-    return _parse_lookup[key](data)
+    return _chart_lookup[key](data)
 
 
 class Style:
@@ -60,6 +62,9 @@ class Style:
         self.style = {}
         for key, value in styles.items():
             self[key] = value
+
+    def __len__(self):
+        return len(self.style)
 
     def __getitem__(self, key):
         return self.style[key]
@@ -77,16 +82,6 @@ class Style:
                 parts.append(f"{key}: {value};")
         return " ".join(parts)
 
-    def attrs(self):
-        "Return the style as a dictionary suitable for inline attributes."
-        result = {}
-        for key, value in self.style.items():
-            if isinstance(value, float):
-                result[key] = N(value)
-            else:
-                result[key] = value
-        return result
-
     def update(self, other):
         if isinstance(other, dict):
             self.style.update(other)
@@ -98,32 +93,33 @@ class Style:
     def copy(self):
         return Style(**self.style)
 
-    def data(self):
-        "Return this item as a dictionary."
+    def asdict(self):
+        "Return as a dictionary, which is also suitable for inline attributes."
         data = {}
         for key, value in self.style.items():
             if isinstance(value, Color):
                 data[key] = str(value)
+            elif isinstance(value, float):
+                result[key] = N(value)
             else:
                 data[key] = value
         return {"style": data}
 
     @classmethod
     def parse(cls, data):
-        "Parse the data content into a Style instance."
+        "Parse the data into a Style instance."
         return Style(**data)
 
 
-add_parse_lookup(Style)
+class Chart:
+    "Abstract chart."
 
-
-class Item:
-    "Abstract graphical item."
-
-    DEFAULT_STYLE = Style(stroke=Color("black"), fill=Color("cyan"))
+    DEFAULT_STYLE = Style(stroke=Color("black"), fill=Color("white"))
     DEFAULT_PALETTE = Palette(Color("red"), Color("green"), Color("blue"))
 
-    def __init__(self, style=None, palette=None):
+    def __init__(self, id=None, title=None, klass=None, style=None, palette=None):
+        self.id = id
+        self.klass = klass
         self.style = self.DEFAULT_STYLE.copy()
         if style is not None:
             self.style.update(style)
@@ -132,8 +128,12 @@ class Item:
                 self.palette = self.DEFAULT_PALETTE.copy()
             else:
                 self.palette = None
-        else:
+        elif isinstance(palette, Palette):
             self.palette = palette
+        elif isinstance(palette, (tuple, list)):
+            self.palette = Palette(*palette)
+        else:
+            raise ValueError("invalid palette specification")
 
     @property
     def extent(self):
@@ -151,27 +151,51 @@ class Item:
             height=N(extent.y),
             viewBox=f"{N(origin.x)} {N(origin.y)} {N(extent.x)} {N(extent.y)}",
         )
-        result.append(self.svg_content())
+        result += self.svg_content()
         return result
 
     def svg_content(self):
         "Return the SVG content element in minixml representation."
         raise NotImplementedError
 
-    def data(self):
-        "Return this item as a dictionary."
-        data = {}
-        if self.style:
-            data = self.style.data()
-        if self.palette:
-            data.update(self.palette.data())
-        data.update(self.data_content())
-        return {self.__class__.__name__.casefold(): data}
+    def write(self, filepath_or_stream):
+        "Write the this item as SVG root to a new file or the open stream."
+        if isinstance(filepath_or_stream, (str, Path)):
+            with open(filepath_or_stream, "w") as outfile:
+                outfile.write(repr(self.svg()))
+        else:
+            filepath_or_stream.write(repr(self.svg()))
 
-    def data_content(self):
-        "Return the data content of this item as a dictionary."
-        return {}
+    def write_content(self, filepath_or_stream):
+        "Write the the SVG content of this item to a new file or the open stream."
+        if isinstance(filepath_or_stream, (str, Path)):
+            with open(filepath_or_stream, "w") as outfile:
+                outfile.write(repr(self.svg_content()))
+        else:
+            filepath_or_stream.write(repr(self.svg_content()))
+
+    def asdict(self):
+        "Return as a dictionary."
+        return {self.__class__.__name__.casefold(): self.asdict_content()}
+
+    def asdict_content(self):
+        "Return the content as a dictionary."
+        data = {}
+        if self.id:
+            data["id"] = self.id
+        if self.klass:
+            data["class"] = self.klass
+        if self.style:
+            data.update(self.style.asdict())
+        if self.palette:
+            data.update(self.palette.asdict())
+        return data
 
     @classmethod
     def parse(cls, data):
-        raise NotImplementedError
+        "Parse the data into an Chart subclass instance."
+        try:
+            data["klass"] = data.pop("class")
+        except KeyError:
+            pass
+        return cls(**data)
