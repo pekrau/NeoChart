@@ -126,18 +126,3 @@ class Path:
             bits.append(command)
         bits.append(" ".join([f"{N(w.x)} {N(w.y)}" for w in v]))
         self.parts.append(" ".join(bits))
-
-
-if __name__ == "__main__":
-    for x in [
-        0.0,
-        0.001,
-        -0.001,
-        0.0007,
-        -0.0007,
-        1000.001,
-        1000.0007,
-        -1000.001,
-        -1000.0007,
-    ]:
-        print(x, N(x))

@@ -76,18 +76,3 @@ class Vector2:
     def polar(self) -> tuple[float, float]:
         "Return the tuple (r, phi) for this instance (radians)."
         return (self.r, self.phi)
-
-
-if __name__ == "__main__":
-    from degrees import Degrees
-
-    # v = Vector2(1.0, 3.0)
-    # print(abs(v))
-    # print(-v)
-    # print(v-v)
-    # print(v.normalized)
-    # print(abs(v.normalized))
-    for phi in [0, 45, 90 + 45, 180, 180 + 45, 180 + 90 + 45]:
-        v = Vector2.from_polar(1.0, float(Degrees(phi)))
-        r, p = v.polar
-        print(phi, v, (r, Degrees.from_radians(p)))

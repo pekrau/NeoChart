@@ -2,7 +2,7 @@
 
 from icecream import ic
 
-from pathlib import Path
+import pathlib
 
 import yaml
 
@@ -11,8 +11,10 @@ from color import Color, Palette
 from degrees import Degrees
 from minixml import Element
 from vector2 import Vector2
-from utils import N
+from utils import N, Path
 
+
+__all__ = ["Chart", "Style", "Degrees", "Element", "Vector2", "Color", "Palette", "write", "read", "parse", "add_chart"]
 
 _chart_lookup = {}
 
@@ -41,7 +43,7 @@ def read(filepath_or_stream):
     """Read and parse the file given by its path, or an open file object.
     Returns the Item instance with its subitems.
     """
-    if isinstance(filepath_or_stream, (str, Path)):
+    if isinstance(filepath_or_stream, (str, pathlib.Path)):
         with open(filepath_or_stream) as infile:
             data = yaml.safe_load(infile)
     else:
@@ -142,14 +144,14 @@ class Chart:
 
     def svg(self):
         "Return the SVG root item with content in minixml representation."
-        extent = self.extent
-        origin = Vector2(0, 0) - extent / 2
+        ext = self.extent
+        ori = Vector2(0, 0) - ext / 2
         result = Element(
             "svg",
             xmlns=constants.SVG_XMLNS,
-            width=N(extent.x),
-            height=N(extent.y),
-            viewBox=f"{N(origin.x)} {N(origin.y)} {N(extent.x)} {N(extent.y)}",
+            width=N(ext.x),
+            height=N(ext.y),
+            viewBox=f"{N(ori.x)} {N(ori.y)} {N(ext.x)} {N(ext.y)}",
         )
         result += self.svg_content()
         return result
@@ -160,7 +162,7 @@ class Chart:
 
     def write(self, filepath_or_stream):
         "Write the this item as SVG root to a new file or the open stream."
-        if isinstance(filepath_or_stream, (str, Path)):
+        if isinstance(filepath_or_stream, (str, pathlib.Path)):
             with open(filepath_or_stream, "w") as outfile:
                 outfile.write(repr(self.svg()))
         else:
@@ -168,7 +170,7 @@ class Chart:
 
     def write_content(self, filepath_or_stream):
         "Write the the SVG content of this item to a new file or the open stream."
-        if isinstance(filepath_or_stream, (str, Path)):
+        if isinstance(filepath_or_stream, (str, pathlib.Path)):
             with open(filepath_or_stream, "w") as outfile:
                 outfile.write(repr(self.svg_content()))
         else:

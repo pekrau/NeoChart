@@ -77,13 +77,3 @@ class Palette:
     def parse(cls, data):
         "Parse the data into a Palette instance."
         return Palette(*[Color(h) for h in data])
-
-
-if __name__ == "__main__":
-    palette = Palette(
-        "red", "#a39", "goldenrod", "slategray", (128, 0, 0),
-    )
-    palette_cycle = palette.cycle()
-    for i in range(8):
-        c = next(palette_cycle)
-        print(c, c.hex, c.rgb)

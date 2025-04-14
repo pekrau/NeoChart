@@ -78,12 +78,3 @@ class Degrees:
         if degrees < -180.0:
             degrees += 360.0
         return Degrees(degrees)
-
-
-if __name__ == "__main__":
-    a = Degrees(90)
-    print(a)
-    print(a + 45)
-    print(2 * a)
-    print(Degrees(350).normalized())
-    print(Degrees(-350).normalized())

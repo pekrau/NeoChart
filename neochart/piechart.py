@@ -8,6 +8,9 @@ from core import *
 from icecream import ic
 
 
+__all__ = ["Piechart", "Slice"]
+
+
 Slice = collections.namedtuple("Slice", ["value", "label", "style"],
                                defaults=[None, None])
 
@@ -77,7 +80,7 @@ class Piechart(Chart):
         "Return the SVG content element in minixml representation."
         result = Element("g", **self.style.asdict())
         result["class"] = "piechart"
-        circle = Element("circle", r=N(self.radius))
+        circle = Element("circle", r=utils.N(self.radius))
         result += circle
         if self.slices:
             palette = self.palette.cycle()
@@ -120,23 +123,3 @@ class Piechart(Chart):
 
 
 add_chart(Piechart)
-
-
-if __name__ == "__main__":
-    import io
-
-    pyramid = Piechart(title="Pyramid", start=Degrees(132))
-    pyramid += Slice(10, "Shady side")
-    pyramid += (15, "Sunny side")
-    pyramid += Slice(70, "Sky")
-    pyramid.write("pyramid.svg")
-    contents1 = pyramid.asdict()
-    buffer = io.StringIO()
-    write(pyramid, buffer)
-    buffer.seek(0)
-    with open("pyramid.yaml", "w") as outfile:
-        outfile.write(buffer.read())
-    buffer.seek(0)
-    pyramid = read(buffer)
-    contents2 = pyramid.asdict()
-    assert contents1 == contents2

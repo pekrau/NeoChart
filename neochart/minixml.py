@@ -254,30 +254,3 @@ def read(filepath_or_stream, content_handler=DefaultContentHandler()):
 def parse(content, content_handler=None):
     "Parse the given XML content. Return the root XML element."
     return read(io.StringIO(content), content_handler=content_handler)
-
-
-if __name__ == "__main__":
-    import io
-
-    xmldata = """<svg xmlns="http://www.w3.org/2000/svg" width="467" height="462">
-  <desc>Författare: Per Kraulis &amp;</desc>
-  <rect x="80" y="60" width="250" height="250" rx="20" style="fill:#ff0000; stroke:#000000;stroke-width:2px;" />
-  <rect x="140" y="120" width="250" height="250" rx="40" style="fill:#0000ff; stroke:#000000; stroke-width:2px; fill-opacity:0.7;" />
-  <g transform="translate(20 40)">
-    <circle cx="100" cy="100" r="50" stroke="black" stroke-width="5" fill="green" />
-    <ellipse cx="50" cy="25" rx="50" ry="25" fill="blue" stroke="none" />
-  </g>
-</svg>
-"""
-    root = parse(io.StringIO(xmldata))
-    print(root["width"], root["height"])
-    root["width"] = 0.7 * float(root["width"])
-    root["height"] = 0.7 * float(root["height"])
-    print(repr(root))
-
-    def test(e):
-        return e.get("fill") == "green"
-
-    print(list(root.walk(test=test)))
-    for e in root.walk():
-        print(f"{e.tag} >{e.text}<")
