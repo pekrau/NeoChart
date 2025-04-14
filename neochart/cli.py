@@ -6,8 +6,7 @@ import pathlib
 import cairosvg
 import click
 
-from core import *
-from piechart import *
+from common import *
 
 
 @click.group()
@@ -22,6 +21,7 @@ def cli():
 def svg(indent, infilepath, outfilepath=None):
     "Convert NeoChart YAML to SVG file."
     write_svg(indent, infilepath, outfilepath)
+
 
 def write_svg(indent, infilepath, outfilepath=None):
     if not outfilepath:
@@ -43,6 +43,7 @@ def validate_scale(ctx, param, value):
 def png(scale, infilepath, outfilepath=None):
     "Convert NeoChart YAML to PNG file."
     write_png(scale, infilepath, outfilepath)
+
 
 def write_png(scale, infilepath, outfilepath=None):
     if not outfilepath:

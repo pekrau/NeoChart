@@ -11,8 +11,9 @@ from icecream import ic
 __all__ = ["Piechart", "Slice"]
 
 
-Slice = collections.namedtuple("Slice", ["value", "label", "style"],
-                               defaults=[None, None])
+Slice = collections.namedtuple(
+    "Slice", ["value", "label", "style"], defaults=[None, None]
+)
 
 
 class Piechart(Chart):
@@ -92,7 +93,7 @@ class Piechart(Chart):
                 fraction = slice.value / total
                 start = stop
                 stop = start + fraction * Degrees(360)
-                path = utils.Path(Vector2(0, 0))
+                path = Path(Vector2(0, 0))
                 p0 = Vector2.from_polar(self.radius, float(start))
                 p1 = Vector2.from_polar(self.radius, float(stop))
                 lof = 1 if stop - start > Degrees(180) else 0

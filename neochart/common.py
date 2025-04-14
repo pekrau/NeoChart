@@ -1,4 +1,4 @@
-"NeoChart. Common entities."
+"NeoChart. Common entities; automatically registers all chart classes."
 
-from core import write, read, parse, Style, Degrees, Vector2, Color, Palette, Path
-from piechart import Piechart, Slice
+from core import *
+from piechart import *

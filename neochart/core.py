@@ -14,7 +14,20 @@ from vector2 import Vector2
 from utils import N, Path
 
 
-__all__ = ["Chart", "Style", "Degrees", "Element", "Vector2", "Color", "Palette", "write", "read", "parse", "add_chart"]
+__all__ = [
+    "Chart",
+    "Style",
+    "Degrees",
+    "Element",
+    "Vector2",
+    "Color",
+    "Palette",
+    "Path",
+    "write",
+    "read",
+    "parse",
+    "add_chart",
+]
 
 _chart_lookup = {}
 
