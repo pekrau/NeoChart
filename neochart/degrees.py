@@ -5,46 +5,43 @@ from __future__ import annotations
 import math
 import functools
 
-from typing import Union, Any
-
 
 @functools.total_ordering
 class Degrees:
     "Handle angle specified in degrees, yields value in radians."
 
     @classmethod
-    def from_radians(cls, radians: float) -> Degrees:
-        assert isinstance(radians, (float, int))
+    def from_radians(cls, radians: int | float) -> Degrees:
         return Degrees(180.0 * radians / math.pi)
 
-    def __init__(self, degrees: Union[int, float]):
+    def __init__(self, degrees: int | float):
         self._degrees = degrees
 
-    def __add__(self, other: Union[int, float, Degrees]) -> Degrees:
+    def __add__(self, other: int | float | Degrees) -> Degrees:
         if isinstance(other, Degrees):
             return Degrees(self.degrees + other.degrees)
         else:
             return Degrees(self.degrees + other)
 
-    def __sub__(self, other: Union[int, float, Degrees]) -> Degrees:
+    def __sub__(self, other: int | float | Degrees) -> Degrees:
         if isinstance(other, Degrees):
             return Degrees(self.degrees - other.degrees)
         else:
             return Degrees(self.degrees - other)
 
-    def __mul__(self, other: Union[int, float]) -> Degrees:
+    def __mul__(self, other: int | float) -> Degrees:
         return Degrees(other * self.degrees)
 
-    def __rmul__(self, other: Union[int, float]) -> Degrees:
+    def __rmul__(self, other: int | float) -> Degrees:
         return Degrees(other * self.degrees)
 
-    def __truediv__(self, other: Union[int, float]) -> Degrees:
+    def __truediv__(self, other: int | float) -> Degrees:
         return Degrees(self.degrees / other)
 
     def __lt__(self, other: Degrees) -> bool:
         return self._degrees < other._degrees
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other) -> bool:
         if isinstance(other, Degrees):
             return self._degrees == other._degrees
         elif isinstance(other, (int, float)):
@@ -72,8 +69,7 @@ class Degrees:
 
     def normalized(self) -> Degrees:
         "Return the angle normalized to within [-180, 180]."
-        degrees = self.degrees % 360.0
-        if degrees > 180.0:
+        if (degrees := self.degrees % 360.0) > 180.0:
             degrees -= 360.0
         if degrees < -180.0:
             degrees += 360.0

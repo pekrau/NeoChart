@@ -4,27 +4,25 @@ from __future__ import annotations
 
 import math
 
-from typing import Union
-
 
 class Vector2:
     "Two-dimensional vector (x, y). Immutable."
 
     @classmethod
-    def from_polar(cls, r: Union[int, float], phi: Union[int, float]) -> Vector2:
+    def from_polar(cls, r: int | float, phi: int | float) -> Vector2:
         "Return a Vector2 instance defined by polar coordinates (radians)."
         return Vector2(r * math.cos(phi), r * math.sin(phi))
 
-    def __init__(self, x: Union[int, float], y: Union[int, float]):
+    def __init__(self, x: int | float, y: int | float):
         self._x = x
         self._y = y
 
     @property
-    def x(self) -> Union[int, float]:
+    def x(self) -> int | float:
         return self._x
 
     @property
-    def y(self) -> Union[int, float]:
+    def y(self) -> int | float:
         return self._y
 
     def __repr__(self) -> str:
@@ -45,10 +43,10 @@ class Vector2:
     def __sub__(self, other: Vector2) -> Vector2:
         return Vector2(self.x - other.x, self.y - other.y)
 
-    def __truediv__(self, other: Union[int, float]) -> Vector2:
+    def __truediv__(self, other: int | float) -> Vector2:
         return Vector2(self.x / other, self.y / other)
 
-    def __rmul__(self, other: Union[int, float]) -> Vector2:
+    def __rmul__(self, other: int | float) -> Vector2:
         return Vector2(other * self.x, other * self.y)
 
     def __float__(self) -> float:
@@ -59,8 +57,7 @@ class Vector2:
 
     @property
     def normalized(self) -> Vector2:
-        length = abs(self)
-        return Vector2(self.x / length, self.y / length)
+        return Vector2(self.x / (length := abs(self)), self.y / length)
 
     @property
     def r(self) -> float:
@@ -76,3 +73,8 @@ class Vector2:
     def polar(self) -> tuple[float, float]:
         "Return the tuple (r, phi) for this instance (radians)."
         return (self.r, self.phi)
+
+
+if __name__ == "__main__":
+    v = Vector2(1, 2)
+    print(v.normalized)

@@ -1,4 +1,4 @@
 "NeoChart. Common entities; automatically registers all chart classes."
 
-from core import *
+from chart import *
 from piechart import *

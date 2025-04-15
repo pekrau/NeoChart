@@ -1,9 +1,10 @@
-"NeoChart. Core classes."
+"NeoChart. Core classes; Chart, Style."
 
-from icecream import ic
-
+import copy
+import io
 import pathlib
 
+import cairosvg
 import yaml
 
 import constants
@@ -47,14 +48,14 @@ def get_parse_function(name):
         raise ValueError(f"no parse function for item '{key}' in YAML data")
 
 
-def write(item, outfile):
-    "Write the YAML of the item into the open file object."
-    yaml.safe_dump(item.asdict(), outfile)
+def write(chart, outfile):
+    "Write the YAML of the chart into the open file object."
+    yaml.safe_dump(chart.as_dict(), outfile)
 
 
 def read(filepath_or_stream):
     """Read and parse the file given by its path, or an open file object.
-    Returns the Item instance with its subitems.
+    Returns a Chart instance.
     """
     if isinstance(filepath_or_stream, (str, pathlib.Path)):
         with open(filepath_or_stream) as infile:
@@ -62,7 +63,7 @@ def read(filepath_or_stream):
     else:
         data = yaml.safe_load(filepath_or_stream)
     if len(data) != 1:
-        raise ValueError("YAML file must contain exactly one top-level item.")
+        raise ValueError("YAML file must contain exactly one top-level chart.")
     return parse(*data.popitem())
 
 
@@ -97,84 +98,89 @@ class Style:
                 parts.append(f"{key}: {value};")
         return " ".join(parts)
 
+    def set(self, key, value):
+        if key == "palette" and isinstance(value, (tuple, list)):
+            self.style["palette"] = Palette(*value)
+        else:
+            self.style[key] = copy.deepcopy(value)
+
     def update(self, other):
         if isinstance(other, dict):
-            self.style.update(other)
+            for key, value in other.items():
+                self.set(key, value)
         elif isinstance(other, Style):
-            self.style.update(other.style)
+            self.update(other.style)
         else:
             raise ValueError("invalid value for Style update")
 
-    def copy(self):
-        return Style(**self.style)
+    def setattrs(self, elem, *attrnames):
+        "Set the attributes given by the names, if existing, in the element."
+        for attrname in attrnames:
+            try:
+                elem[attrname] = self.style[attrname]
+            except KeyError:
+                pass
 
-    def asdict(self):
-        "Return as a dictionary, which is also suitable for inline attributes."
+    def as_dict(self):
+        "Return as a dictionary of basic YAML values."
         data = {}
         for key, value in self.style.items():
             if isinstance(value, Color):
                 data[key] = str(value)
+            elif isinstance(value, Palette):
+                data[key] = [str(c) for c in value.colors]
             elif isinstance(value, float):
                 result[key] = N(value)
             else:
                 data[key] = value
         return {"style": data}
 
-    @classmethod
-    def parse(cls, data):
-        "Parse the data into a Style instance."
-        return Style(**data)
-
 
 class Chart:
     "Abstract chart."
 
-    DEFAULT_STYLE = Style(stroke=Color("black"), fill=Color("white"))
-    DEFAULT_PALETTE = Palette(Color("red"), Color("green"), Color("blue"))
+    DEFAULT_STYLE = Style(
+        stroke=Color("black"),
+        fill=Color("white"),
+        palette=Palette("red", "green", "blue"),
+    )
 
-    def __init__(self, id=None, title=None, klass=None, style=None, palette=None):
+    def __init__(self, id=None, klass=None, style=None):
         self.id = id
         self.klass = klass
-        self.style = self.DEFAULT_STYLE.copy()
+        self.style = copy.deepcopy(self.DEFAULT_STYLE)
         if style is not None:
             self.style.update(style)
-        if palette is None:
-            if self.DEFAULT_PALETTE is not None:
-                self.palette = self.DEFAULT_PALETTE.copy()
-            else:
-                self.palette = None
-        elif isinstance(palette, Palette):
-            self.palette = palette
-        elif isinstance(palette, (tuple, list)):
-            self.palette = Palette(*palette)
-        else:
-            raise ValueError("invalid palette specification")
 
     @property
     def extent(self):
-        "Extent of this graphical item."
+        "Extent of this chart."
         return Vector2(0, 0)
 
     def svg(self):
-        "Return the SVG root item with content in minixml representation."
-        ext = self.extent
-        ori = Vector2(0, 0) - ext / 2
+        "Return the SVG root element with content in minixml representation."
+        origin = Vector2(0, 0) - (extent := self.extent) / 2
         result = Element(
             "svg",
             xmlns=constants.SVG_XMLNS,
-            width=N(ext.x),
-            height=N(ext.y),
-            viewBox=f"{N(ori.x)} {N(ori.y)} {N(ext.x)} {N(ext.y)}",
+            width=N(extent.x),
+            height=N(extent.y),
+            viewBox=f"{N(origin.x)} {N(origin.y)} {N(extent.x)} {N(extent.y)}",
         )
         result += self.svg_content()
         return result
 
     def svg_content(self):
         "Return the SVG content element in minixml representation."
-        raise NotImplementedError
+        result = Element("g")
+        if self.id:
+            result["id"] = self.id
+        if self.klass:
+            result["class"] = self.klass
+        return result
 
     def write(self, filepath_or_stream):
-        "Write the this item as SVG root to a new file or the open stream."
+        "Write the this chart as SVG root to a new file or the open stream."
         if isinstance(filepath_or_stream, (str, pathlib.Path)):
             with open(filepath_or_stream, "w") as outfile:
                 outfile.write(repr(self.svg()))
@@ -182,28 +188,37 @@ class Chart:
             filepath_or_stream.write(repr(self.svg()))
 
     def write_content(self, filepath_or_stream):
-        "Write the the SVG content of this item to a new file or the open stream."
+        "Write the the SVG content of this chart to a new file or the open stream."
         if isinstance(filepath_or_stream, (str, pathlib.Path)):
             with open(filepath_or_stream, "w") as outfile:
                 outfile.write(repr(self.svg_content()))
         else:
             filepath_or_stream.write(repr(self.svg_content()))
 
-    def asdict(self):
-        "Return as a dictionary."
-        return {self.__class__.__name__.casefold(): self.asdict_content()}
+    def write_png(self, filepath_or_stream, scale=1.0):
+        "Write this chart as a PNG image to a new file or the open stream."
+        assert scale > 0.0
+        if isinstance(filepath_or_stream, (str, pathlib.Path)):
+            with open(filepath_or_stream, "wb") as outfile:
+                inputfile = io.StringIO(repr(self.svg()))
+                outfile.write(cairosvg.svg2png(file_obj=inputfile, scale=scale))
+        else:
+            inputfile = io.StringIO(repr(self.svg()))
+            filepath_or_stream.write(cairosvg.svg2png(file_obj=inputfile, scale=scale))
 
-    def asdict_content(self):
-        "Return the content as a dictionary."
+    def as_dict(self):
+        "Return as a dictionary of basic YAML values."
+        return {self.__class__.__name__.casefold(): self.as_dict_content()}
+
+    def as_dict_content(self):
+        "Return the content as a dictionary of basic YAML values."
         data = {}
         if self.id:
             data["id"] = self.id
         if self.klass:
             data["class"] = self.klass
         if self.style:
-            data.update(self.style.asdict())
-        if self.palette:
-            data.update(self.palette.asdict())
+            data.update(self.style.as_dict())
         return data
 
     @classmethod

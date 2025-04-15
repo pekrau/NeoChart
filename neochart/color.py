@@ -62,18 +62,6 @@ class Palette:
     def add(self, color):
         self.colors.append(color)
 
-    def copy(self):
-        return Palette(*self.colors)
-
     def cycle(self):
         "Return an eternally cycling iterator over the current colors."
         return itertools.cycle(self.colors[:])
-
-    def asdict(self):
-        "Return as a dictionary."
-        return {"palette": [str(c) for c in self.colors]}
-
-    @classmethod
-    def parse(cls, data):
-        "Parse the data into a Palette instance."
-        return Palette(*[Color(h) for h in data])

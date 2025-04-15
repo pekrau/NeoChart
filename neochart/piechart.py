@@ -3,9 +3,7 @@
 import collections
 
 import utils
-from core import *
-
-from icecream import ic
+from chart import *
 
 
 __all__ = ["Piechart", "Slice"]
@@ -20,24 +18,24 @@ class Piechart(Chart):
     "Pie chart."
 
     DEFAULT_RADIUS = 100.0
-    DEFAULT_STYLE = Style(stroke=Color("gray"), stroke_width=2, fill=Color("white"))
-    DEFAULT_PALETTE = Palette(
-        Color("#4c78a8"), Color("#9ecae9"), Color("#f58518"), Color("#ffbf79")
+    DEFAULT_STYLE = Style(
+        stroke=Color("gray"),
+        stroke_width=2,
+        fill=Color("white"),
+        palette=Palette("red", "green", "blue"),
     )
 
     def __init__(
         self,
         id=None,
         klass=None,
-        title=None,
         radius=None,
         start=None,
         total=None,
         style=None,
-        palette=None,
         slices=None,
     ):
-        super().__init__(id=id, klass=klass, title=title, style=style, palette=palette)
+        super().__init__(id=id, klass=klass, style=style)
         self.radius = radius if radius is not None else self.DEFAULT_RADIUS
         if isinstance(start, (int, float)):
             self.start = Degrees(start)
@@ -58,7 +56,7 @@ class Piechart(Chart):
             item = Slice(*slice)
         elif isinstance(slice, dict) and "value" in slice:
             try:
-                style = Style.parse(slice["style"])
+                style = Style(**slice["style"])
             except KeyError:
                 style = None
             item = Slice(slice["value"], slice.get("label"), style)
@@ -79,12 +77,15 @@ class Piechart(Chart):
 
     def svg_content(self):
         "Return the SVG content element in minixml representation."
-        result = Element("g", **self.style.asdict())
-        result["class"] = "piechart"
+        result = super().svg_content()
+        self.style.setattrs(result, "stroke", "stroke-width", "fill")
         circle = Element("circle", r=utils.N(self.radius))
         result += circle
         if self.slices:
-            palette = self.palette.cycle()
+            try:
+                palette = self.style["palette"].cycle()
+            except KeyError:
+                palette = None
             total = sum([s.value for s in self.slices])
             if self.total:
                 total = max(total, self.total)
@@ -100,16 +101,16 @@ class Piechart(Chart):
                 path.L(p0).A(self.radius, self.radius, 0, lof, 1, p1).Z()
                 elem = Element("path", d=str(path))
                 try:
-                    color = slice.style["fill"]
+                    elem["fill"] = str(slice.style["fill"])
                 except (TypeError, KeyError):
-                    color = next(palette)
-                elem["fill"] = str(color)
+                    if palette:
+                        elem["fill"] = str(next(palette))
                 result += elem
         return result
 
-    def asdict_content(self):
-        "Return content as a dictionary."
-        data = super().asdict_content()
+    def as_dict_content(self):
+        "Return content as a dictionary of basic YAML values."
+        data = super().as_dict_content()
         data["radius"] = self.radius
         data["start"] = None if self.start is None else self.start.degrees
         data["slices"] = []
@@ -118,7 +119,7 @@ class Piechart(Chart):
             if slice.label:
                 d["label"] = slice.label
             if slice.style:
-                d.update(slice.style.asdict())
+                d.update(slice.style.as_dict())
             data["slices"].append(d)
         return data
 

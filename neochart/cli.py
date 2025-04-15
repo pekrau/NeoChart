@@ -23,7 +23,7 @@ def svg(indent, infilepath, outfilepath=None):
     write_svg(indent, infilepath, outfilepath)
 
 
-def write_svg(indent, infilepath, outfilepath=None):
+def write_svg(infilepath, outfilepath=None, indent=2):
     if not outfilepath:
         outfilepath = pathlib.Path(infilepath).with_suffix(".svg")
     with open(outfilepath, "w") as outfile:
@@ -45,12 +45,12 @@ def png(scale, infilepath, outfilepath=None):
     write_png(scale, infilepath, outfilepath)
 
 
-def write_png(scale, infilepath, outfilepath=None):
+def write_png(infilepath, outfilepath=None, scale=1.0):
     if not outfilepath:
         outfilepath = pathlib.Path(infilepath).with_suffix(".png")
-    buffer = io.StringIO(repr(read(infilepath).svg()))
+    inputfile = io.StringIO(repr(read(infilepath).svg()))
     with open(outfilepath, "wb") as outfile:
-        outfile.write(cairosvg.svg2png(file_obj=buffer, scale=scale))
+        outfile.write(cairosvg.svg2png(file_obj=inputfile, scale=scale))
 
 
 if __name__ == "__main__":

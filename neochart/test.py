@@ -1,18 +1,24 @@
 "Test NeoChart."
 
+from icecream import ic
+
 from common import *
-from cli import write_png
 
 
 if __name__ == "__main__":
     import io
 
-    pyramid = Piechart(title="Pyramid", start=Degrees(132))
+    pyramid = Piechart(
+        id="pyramid",
+        klass="piechart",
+        start=Degrees(132),
+        style=Style(palette=Palette("#4c78a8", "#9ecae9", "#f58518")),
+    )
     pyramid += Slice(10, "Shady side")
     pyramid += (15, "Sunny side")
     pyramid += Slice(70, "Sky")
     pyramid.write("pyramid.svg")
-    contents1 = pyramid.asdict()
+    contents1 = pyramid.as_dict()
     buffer = io.StringIO()
     write(pyramid, buffer)
     buffer.seek(0)
@@ -20,6 +26,6 @@ if __name__ == "__main__":
         outfile.write(buffer.read())
     buffer.seek(0)
     pyramid = read(buffer)
-    contents2 = pyramid.asdict()
+    contents2 = pyramid.as_dict()
     assert contents1 == contents2
-    write_png(2.0, "pyramid.yaml")
+    pyramid.write_png("pyramid.png")
